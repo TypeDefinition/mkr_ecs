@@ -21,6 +21,22 @@ add_library(${PROJECT_NAME} ${SRC_FILES})
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(${PROJECT_NAME} PUBLIC ${SRC_DIR})
 
+# Download Submodules
+find_package(Git)
+if(GIT_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git")
+    # Update Submodules
+    option(GIT_SUBMODULE "check submodules during build" ON)
+    if(GIT_SUBMODULE)
+        message(STATUS "submodule update")
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                RESULT_VARIABLE GIT_SUBMOD_RESULT)
+        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
+            message(FATAL_ERROR "git submodule update --init --recursive failed with ${GIT_SUBMOD_RESULT}")
+        endif()
+    endif()
+endif()
+
 # External Dependencies
 add_subdirectory(external/mkr_common_lib)
 target_include_directories(${PROJECT_NAME}

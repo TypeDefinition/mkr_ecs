@@ -1,0 +1,3 @@
+[submodule "external/mkr_common_lib"]
+	path = external/mkr_common_lib
+	url = https://github.com/TypeDefinition/mkr_common_lib.git
