@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.23.2)
 project(mkr_ecs_lib)
 set(CMAKE_CXX_STANDARD 20)
+# set(CMAKE_CXX_FLAGS "-std=c++20 -O0")
 set(CMAKE_CXX_FLAGS "-std=c++20 -O3")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
