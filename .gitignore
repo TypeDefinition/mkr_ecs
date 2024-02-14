@@ -34,3 +34,7 @@
 # Bazel Generated Files
 .clwb
 bazel-*
+
+# Clion Files
+.idea
+cmake-build-debug
