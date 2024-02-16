@@ -2,6 +2,8 @@
 
 #include <set>
 #include <vector>
+#include <unordered_map>
+#include <functional>
 #include "common/type_id.h"
 #include "ecs/id.h"
 #include "ecs/component.h"
