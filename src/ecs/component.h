@@ -1,3 +1,5 @@
+#pragma once
+
 namespace mkr {
     class component {
     public:
