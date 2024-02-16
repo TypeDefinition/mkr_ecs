@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include "ecs/id.h"
-#include "ecs/archetype.h"
 
 using namespace mkr;
 using namespace std;

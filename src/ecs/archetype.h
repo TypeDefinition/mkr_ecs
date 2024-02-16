@@ -4,12 +4,11 @@
 #include <vector>
 #include <unordered_map>
 #include <functional>
-#include "common/type_id.h"
+#include "ecs/component_id.h"
 #include "ecs/id.h"
-#include "ecs/component.h"
 
 namespace mkr {
-    typedef std::set<type_id_t> archetype_t;
+    typedef std::set<component_id_t> archetype_t;
 
     class archetype {
     private:
@@ -18,7 +17,7 @@ namespace mkr {
         /// A 2D array containing the components of this archetype.
         std::vector<void*> components_;
         /// For each component type of this archetype, what is its array index in components_?
-        std::unordered_map<type_id_t, std::size_t> component_to_index_;
+        std::unordered_map<component_id_t, std::size_t> component_to_index_;
         /**
          * For each entity in this archetype, what is its array index in components_[type]?
          * For all component_array in components_, we store the components of an entity at the same index.
@@ -26,42 +25,40 @@ namespace mkr {
          */
         std::unordered_map<id_t, std::size_t> entity_to_index_;
         std::vector<id_t> index_to_entity_;
-        /// Helpers to clean up our type-erased arrays during destruction.
-        std::vector<std::function<void()>> destroy_funcs_;
-        /// Helpers to append 1 more element to type-erased arrays.
-        std::vector<std::function<void()>> append_funcs_;
-        std::vector<std::function<void(std::size_t, std::size_t)>> swap_funcs_;
-        std::vector<std::function<void()>> remove_last_funcs_;
+
+        // Helper functions.
+        std::vector<std::function<void()>> destroy_funcs_; // Delete arrays.
+        std::vector<std::function<void()>> append_funcs_; // Append one element to arrays.
+        std::vector<std::function<void(std::size_t, std::size_t)>> swap_funcs_; // Swap 2 elements in the arrays.
+        std::vector<std::function<void()>> pop_back_funcs_; // Remove the last element in the arrays.
+        std::vector<std::function<void(archetype*)>> create_funcs_; // Create arrays.
+        std::vector<std::function<void(id_t, archetype*)>> copy_funcs_; // Copy components of an entity to another archetype.
 
         archetype() {}
 
         template<typename T>
         void create_array() {
+            const auto comp_id = component_id::value<T>();
+            types_.insert(comp_id);
+
             // Update component type indices.
             auto comp_idx = components_.size();
-            component_to_index_[type_id<component>::value<T>()] = comp_idx;
+            component_to_index_[comp_id] = comp_idx;
 
             // Create array.
-            components_.push_back(new std::vector<T>());
+            auto arr = new std::vector<T>();
+            components_.push_back(arr);
 
-            destroy_funcs_.push_back([this, comp_idx]() {
-                auto* arr_ptr = static_cast<std::vector<T>*>(components_[comp_idx]);
-                delete arr_ptr;
-            });
-
-            append_funcs_.push_back([this, comp_idx]() {
-                auto* arr_ptr = static_cast<std::vector<T>*>(components_[comp_idx]);
-                arr_ptr->push_back(T{});
-            });
-
-            swap_funcs_.push_back([this, comp_idx](std::size_t _a, std::size_t _b) {
-                auto* arr_ptr = static_cast<std::vector<T>*>(components_[comp_idx]);
-                std::swap((*arr_ptr)[_a], (*arr_ptr)[_b]);
-            });
-
-            remove_last_funcs_.push_back([this, comp_idx]() {
-                auto* arr_ptr = static_cast<std::vector<T>*>(components_[comp_idx]);
-                arr_ptr->pop_back();
+            // Helper functions.
+            destroy_funcs_.push_back([arr]() { delete arr; });
+            append_funcs_.push_back([arr]() { arr->push_back(T{}); });
+            swap_funcs_.push_back([arr](std::size_t _a, std::size_t _b) { std::swap((*arr)[_a], (*arr)[_b]); });
+            pop_back_funcs_.push_back([arr]() { arr->pop_back(); });
+            create_funcs_.push_back([](archetype* _arc) { _arc->create_array<T>(); });
+            copy_funcs_.push_back([this](id_t _entity, archetype* _dst) {
+                if (_dst->has_type<T>()) { // There is a chance we're moving to an archetype with fewer types, such as when removing components.
+                    _dst->set<T>(_entity, this->get<T>(_entity));
+                }
             });
         }
 
@@ -73,14 +70,14 @@ namespace mkr {
 
         template<typename T>
         std::vector<T>& casted_arr() {
-            const std::size_t comp_idx = component_to_index_.find(type_id<component>::value<T>())->second;
+            const std::size_t comp_idx = component_to_index_.find(component_id::value<T>())->second;
             auto casted_arr = static_cast<std::vector<T>*>(components_[comp_idx]);
             return *casted_arr;
         }
 
         template<typename T>
         const std::vector<T>& casted_arr() const {
-            const std::size_t comp_idx = component_to_index_.find(type_id<component>::value<T>())->second;
+            const std::size_t comp_idx = component_to_index_.find(component_id::value<T>())->second;
             return *static_cast<std::vector<T>*>(components_[comp_idx]);
         }
 
@@ -100,19 +97,21 @@ namespace mkr {
             for (const auto& f : destroy_funcs_) { f(); }
         }
 
-        template<typename T>
-        bool has_component() const { return types_.contains(type_id<component>::value<T>()); }
+        const archetype_t& types() const { return types_; }
 
         template<typename T>
-        const T* get(id_t _entity) const {
+        bool has_type() const { return types_.contains(component_id::value<T>()); }
+
+        template<typename T>
+        const T& get(id_t _entity) const {
             const std::size_t ent_idx = entity_to_index_.find(_entity)->second;
-            return &casted_arr<T>()[ent_idx];
+            return casted_arr<T>()[ent_idx];
         }
 
         template<typename T>
-        void set(id_t _entity, T _component) {
+        void set(id_t _entity, const T& _component) {
             const std::size_t ent_idx = entity_to_index_.find(_entity)->second;
-            casted_arr<T>()[ent_idx] = std::move(_component);
+            casted_arr<T>()[ent_idx] = _component;
         }
 
         void add(id_t _entity) {
@@ -137,7 +136,23 @@ namespace mkr {
             // Remove last element.
             index_to_entity_.pop_back();
             entity_to_index_.erase(rm_iter);
-            for (const auto & f : remove_last_funcs_) { f(); }
+            for (const auto & f : pop_back_funcs_) { f(); }
+        }
+
+        bool has_entity(id_t _entity) const { return entity_to_index_.contains(_entity); }
+
+        template<typename T>
+        archetype* branch_to() const {
+            auto arc = new archetype();
+            for (const auto& f : create_funcs_) { f(arc); }
+            arc->create_array<T>();
+            return arc;
+        }
+
+        void move_to(id_t _entity, archetype* _dst) {
+            _dst->add(_entity);
+            for (const auto& f : copy_funcs_) { f(_entity, _dst); }
+            remove(_entity);
         }
     };
 }
