@@ -10,15 +10,15 @@ namespace mkr {
         for (auto &iter: archetypes_) { delete iter.second; }
     }
 
-    id_t world::create_entity() {
-        id_t ent = entities_.create_id();
+    ecs_id_t world::create_entity() {
+        ecs_id_t ent = entities_.create_id();
         archetype *arc = archetypes_[archetype_t{}];
         ent_to_arc_.insert(std::pair(ent, arc));
         arc->add(ent);
         return ent;
     }
 
-    void world::destroy_entity(id_t _entity) {
+    void world::destroy_entity(ecs_id_t _entity) {
         entities_.destroy_id(_entity);
         archetype *arc = ent_to_arc_[_entity];
         arc->remove(_entity);

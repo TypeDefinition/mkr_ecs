@@ -23,8 +23,8 @@ struct baz {
 TEST(archetype, one) {
     auto arc = archetype::make<foo>();
 
-    mkr::id_t ent1 = 101;
-    mkr::id_t ent2 = 102;
+    mkr::ecs_id_t ent1 = 101;
+    mkr::ecs_id_t ent2 = 102;
 
     arc->add(ent1);
     EXPECT_TRUE(arc->get<foo>(ent1).val_ == 7);
@@ -42,8 +42,8 @@ TEST(archetype, one) {
 TEST(archetype, two) {
     auto arc = archetype::make<foo, bar>();
 
-    mkr::id_t ent1 = 101;
-    mkr::id_t ent2 = 102;
+    mkr::ecs_id_t ent1 = 101;
+    mkr::ecs_id_t ent2 = 102;
 
     arc->add(ent1);
     EXPECT_TRUE(arc->get<foo>(ent1).val_ == 7);
@@ -66,10 +66,10 @@ TEST(archetype, two) {
 TEST(archetype, three) {
     auto arc = archetype::make<foo, bar, baz>();
 
-    mkr::id_t ent1 = 101;
-    mkr::id_t ent2 = 102;
-    mkr::id_t ent3 = 103;
-    mkr::id_t ent4 = 104;
+    mkr::ecs_id_t ent1 = 101;
+    mkr::ecs_id_t ent2 = 102;
+    mkr::ecs_id_t ent3 = 103;
+    mkr::ecs_id_t ent4 = 104;
 
     arc->add(ent1);
     EXPECT_TRUE(arc->get<foo>(ent1).val_ == 7);
@@ -101,10 +101,10 @@ TEST(archetype, three) {
 TEST(archetype, remove) {
     auto arc = archetype::make<foo, bar, baz>();
 
-    mkr::id_t ent1 = 101;
-    mkr::id_t ent2 = 102;
-    mkr::id_t ent3 = 103;
-    mkr::id_t ent4 = 104;
+    mkr::ecs_id_t ent1 = 101;
+    mkr::ecs_id_t ent2 = 102;
+    mkr::ecs_id_t ent3 = 103;
+    mkr::ecs_id_t ent4 = 104;
 
     arc->add(ent1);
     arc->set<foo>(ent1, foo{23});
@@ -186,10 +186,10 @@ TEST(archetype, move) {
     auto arc1 = archetype::make<foo, bar, baz>();
     auto arc2 = archetype::make<bar>();
 
-    mkr::id_t ent1 = 101;
-    mkr::id_t ent2 = 102;
-    mkr::id_t ent3 = 103;
-    mkr::id_t ent4 = 104;
+    mkr::ecs_id_t ent1 = 101;
+    mkr::ecs_id_t ent2 = 102;
+    mkr::ecs_id_t ent3 = 103;
+    mkr::ecs_id_t ent4 = 104;
 
     arc1->add(ent1);
     arc1->set<foo>(ent1, foo{23});

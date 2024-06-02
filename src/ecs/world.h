@@ -7,7 +7,7 @@
 #include <queue>
 #include <functional>
 #include <stdexcept>
-#include "ecs/id.h"
+#include "ecs/ecs_id.h"
 #include "ecs/component_id.h"
 #include "ecs/archetype.h"
 #include "ecs/exception.h"
@@ -15,28 +15,28 @@
 namespace mkr {
     class world {
     private:
-        id entities_;
+        ecs_id entities_;
         std::map<archetype_t, archetype*> archetypes_;
-        std::unordered_map<id_t, archetype*> ent_to_arc_; /// Maps an entity to its archetype.
+        std::unordered_map<ecs_id_t, archetype*> ent_to_arc_; /// Maps an entity to its archetype.
 
     public:
         world();
 
         ~world();
 
-        id_t create_entity();
+        ecs_id_t create_entity();
 
-        void destroy_entity(id_t _id);
+        void destroy_entity(ecs_id_t _id);
 
         template<typename T>
-        bool has_component(id_t _entity) const {
+        bool has_component(ecs_id_t _entity) const {
             auto iter = ent_to_arc_.find(_entity);
             if (iter == ent_to_arc_.end()) { return false; }
             return iter->second->has_type<T>();
         }
 
         template<typename T>
-        const T &get_component(id_t _entity) const {
+        const T &get_component(ecs_id_t _entity) const {
             // Ensure that entity exists and has component.
             if (!has_component<T>(_entity)) {
                 throw missing_component();
@@ -47,7 +47,7 @@ namespace mkr {
         }
 
         template<typename T>
-        world &add_component(id_t _entity) {
+        world &add_component(ecs_id_t _entity) {
             // Get current archetype.
             archetype *curr_arc = ent_to_arc_[_entity];
 
@@ -69,7 +69,7 @@ namespace mkr {
         }
 
         template<typename T>
-        world &remove_component(id_t _entity) {
+        world &remove_component(ecs_id_t _entity) {
             // Get current archetype.
             archetype *curr_arc = ent_to_arc_[_entity];
 
